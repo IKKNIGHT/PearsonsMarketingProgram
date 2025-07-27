@@ -21,12 +21,15 @@ export function createServer() {
   const app = express();
 
   // Middleware
-  app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
-      ? ['https://*.netlify.app', 'https://*.netlify.com']
-      : ['http://localhost:8080', 'http://localhost:3000'],
-    credentials: true
-  }));
+  app.use(
+    cors({
+      origin:
+        process.env.NODE_ENV === "production"
+          ? ["https://*.netlify.app", "https://*.netlify.com"]
+          : ["http://localhost:8080", "http://localhost:3000"],
+      credentials: true,
+    }),
+  );
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
@@ -38,7 +41,7 @@ export function createServer() {
         await initializeDatabase();
         dbInitialized = true;
       } catch (error) {
-        console.error('Failed to initialize database:', error);
+        console.error("Failed to initialize database:", error);
         throw error;
       }
     }
@@ -50,8 +53,8 @@ export function createServer() {
       await ensureDbInitialized();
       next();
     } catch (error) {
-      console.error('Database initialization failed:', error);
-      res.status(500).json({ error: 'Database unavailable' });
+      console.error("Database initialization failed:", error);
+      res.status(500).json({ error: "Database unavailable" });
     }
   });
 
@@ -69,7 +72,10 @@ export function createServer() {
       environment: process.env.NODE_ENV,
       timestamp: new Date().toISOString(),
       platform: process.platform,
-      dbPath: process.env.NODE_ENV === 'production' ? '/tmp/database.sqlite' : './database.sqlite'
+      dbPath:
+        process.env.NODE_ENV === "production"
+          ? "/tmp/database.sqlite"
+          : "./database.sqlite",
     });
   });
 
