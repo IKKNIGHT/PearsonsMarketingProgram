@@ -4,8 +4,9 @@ import bcrypt from "bcrypt";
 // Enable verbose mode for development
 const sqlite = sqlite3.verbose();
 
-// Database connection
-const db = new sqlite.Database("./database.sqlite");
+// Database connection - use /tmp directory for serverless environments like Netlify
+const dbPath = process.env.NODE_ENV === 'production' ? '/tmp/database.sqlite' : './database.sqlite';
+const db = new sqlite.Database(dbPath);
 
 // Database interfaces
 export interface User {
