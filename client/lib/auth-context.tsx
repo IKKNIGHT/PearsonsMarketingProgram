@@ -1,37 +1,53 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { api } from './api';
+import { User } from '@shared/api';
 
 export type UserType = 'creator' | 'coach';
 
-interface User {
-  id: string;
-  name: string;
-  type: UserType;
-}
-
 interface AuthContextType {
   user: User | null;
-  login: (name: string, type: UserType) => void;
+  login: (name: string, type: UserType) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = (name: string, type: UserType) => {
-    const newUser = { id: Date.now().toString(), name, type };
-    setUser(newUser);
-    localStorage.setItem('user', JSON.stringify(newUser));
+  useEffect(() => {
+    // Check for saved user session
+    const savedUserId = localStorage.getItem('userId');
+    if (savedUserId) {
+      api.getUserById(savedUserId)
+        .then(setUser)
+        .catch(() => {
+          // If user not found, clear the saved session
+          localStorage.removeItem('userId');
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const login = async (name: string, type: UserType) => {
+    try {
+      const user = await api.login(name, type);
+      setUser(user);
+      localStorage.setItem('userId', user.id);
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('userId');
   };
 
   return (
@@ -39,7 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       login,
       logout,
-      isAuthenticated: !!user
+      isAuthenticated: !!user,
+      isLoading
     }}>
       {children}
     </AuthContext.Provider>
