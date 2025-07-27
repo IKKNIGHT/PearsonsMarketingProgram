@@ -1,5 +1,5 @@
 import sqlite3 from "sqlite3";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 // Enable verbose mode for development
 const sqlite = sqlite3.verbose();
