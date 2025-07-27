@@ -52,7 +52,8 @@ class ApiService {
     });
 
     if (!response.ok) {
-      throw new Error(`Create reel failed: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Create reel failed: ${response.statusText}${errorData.details ? ` - ${errorData.details}` : ''}`);
     }
 
     const data: CreateReelResponse = await response.json();
