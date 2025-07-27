@@ -109,11 +109,12 @@ export default function Login() {
                 </RadioGroup>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
+                disabled={isLoading}
                 className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium"
               >
-                Continue to Dashboard
+                {isLoading ? 'Signing in...' : 'Continue to Dashboard'}
               </Button>
             </form>
           </CardContent>
