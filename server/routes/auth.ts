@@ -5,7 +5,6 @@ import { database } from "../database";
 export const registerUser: RequestHandler = async (req, res) => {
   try {
     const { username, name, password, type } = req.body;
-    console.log('Registration attempt:', { username, name, type });
 
     if (!username || !name || !password || !type || !['creator', 'coach'].includes(type)) {
       return res.status(400).json({
@@ -42,7 +41,6 @@ export const registerUser: RequestHandler = async (req, res) => {
 export const loginUser: RequestHandler = async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log('Login attempt for username:', username);
 
     if (!username || !password) {
       return res.status(400).json({
@@ -52,8 +50,6 @@ export const loginUser: RequestHandler = async (req, res) => {
 
     // Get user by username
     const user = await database.getUserByUsername(username);
-    console.log('User found:', user ? `${user.username} (${user.type})` : 'null');
-
     if (!user) {
       return res.status(401).json({
         error: 'Invalid username or password'
@@ -62,8 +58,6 @@ export const loginUser: RequestHandler = async (req, res) => {
 
     // Verify password
     const isValidPassword = await database.verifyPassword(password, user.password);
-    console.log('Password valid:', isValidPassword);
-
     if (!isValidPassword) {
       return res.status(401).json({
         error: 'Invalid username or password'
