@@ -142,7 +142,7 @@ export default function Login() {
                     disabled={isLoading}
                     className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium"
                   >
-                    {isLoading ? 'Signing in...' : 'Sign In'}
+                    {isLoading ? 'Logging in...' : 'Login'}
                   </Button>
                 </form>
               </TabsContent>
