@@ -83,7 +83,7 @@ export const getUserById: RequestHandler = async (req, res) => {
     }
 
     const user = await database.getUserById(id);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -94,5 +94,68 @@ export const getUserById: RequestHandler = async (req, res) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Update user profile
+export const updateUserProfile: RequestHandler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, name, password, currentPassword } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    // Get current user
+    const currentUser = await database.getUserById(id);
+    if (!currentUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // If updating password, verify current password
+    if (password) {
+      if (!currentPassword) {
+        return res.status(400).json({ error: 'Current password is required to update password' });
+      }
+
+      const isValidCurrentPassword = await database.verifyPassword(currentPassword, currentUser.password);
+      if (!isValidCurrentPassword) {
+        return res.status(401).json({ error: 'Current password is incorrect' });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+      }
+    }
+
+    // Prepare updates object
+    const updates: { username?: string; name?: string; password?: string } = {};
+
+    if (username !== undefined && username.trim() !== currentUser.username) {
+      updates.username = username.trim();
+    }
+
+    if (name !== undefined && name.trim() !== currentUser.name) {
+      updates.name = name.trim();
+    }
+
+    if (password) {
+      updates.password = password;
+    }
+
+    // Update user
+    const updatedUser = await database.updateUser(id, updates);
+
+    // Don't return password in response
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    res.json({ user: userWithoutPassword });
+  } catch (error: any) {
+    console.error('Update user error:', error);
+    if (error.message === 'Username already exists') {
+      res.status(409).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
   }
 };
