@@ -6,17 +6,25 @@ export interface DemoResponse {
 // User types
 export interface User {
   id: string;
+  username: string;
   name: string;
   type: 'creator' | 'coach';
   created_at: string;
 }
 
-export interface LoginRequest {
+export interface RegisterRequest {
+  username: string;
   name: string;
+  password: string;
   type: 'creator' | 'coach';
 }
 
-export interface LoginResponse {
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface AuthResponse {
   user: User;
 }
 
