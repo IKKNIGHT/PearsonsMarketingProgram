@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Instagram, MessageSquare, Users, CheckCircle, LogOut, ExternalLink, Send } from 'lucide-react';
+import { Instagram, MessageSquare, Users, CheckCircle, LogOut, ExternalLink, Send, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function CoachDashboard() {
@@ -115,6 +115,12 @@ export default function CoachDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, Coach {user.name}</span>
+              <Link to="/profile">
+                <Button variant="outline" className="border-gray-200">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Profile
+                </Button>
+              </Link>
               <Button variant="outline" onClick={handleLogout} className="border-gray-200">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
