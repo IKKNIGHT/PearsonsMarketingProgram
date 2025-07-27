@@ -63,6 +63,16 @@ export function createServer() {
 
   app.get("/api/demo", handleDemo);
 
+  // Debug endpoint for Netlify
+  app.get("/api/debug", (_req, res) => {
+    res.json({
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+      platform: process.platform,
+      dbPath: process.env.NODE_ENV === 'production' ? '/tmp/database.sqlite' : './database.sqlite'
+    });
+  });
+
   // Authentication routes
   app.post("/api/auth/register", registerUser);
   app.post("/api/auth/login", loginUser);
