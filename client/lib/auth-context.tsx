@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   register: (username: string, name: string, password: string, type: UserType) => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
+  updateUser: (updatedUser: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -57,6 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+    localStorage.setItem('userId', updatedUser.id);
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('userId');
@@ -67,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       register,
       login,
+      updateUser,
       logout,
       isAuthenticated: !!user,
       isLoading
