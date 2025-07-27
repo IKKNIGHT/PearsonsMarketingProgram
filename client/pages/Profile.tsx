@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, User, Lock, Save, Eye, EyeOff, LogOut } from 'lucide-react';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
   
   const [username, setUsername] = useState('');
@@ -64,13 +64,9 @@ export default function Profile() {
       }
 
       const updatedUser = await api.updateProfile(user.id, updates);
-      
+
       // Update user in auth context
-      if (user) {
-        const newUser = { ...user, ...updatedUser };
-        // We need to manually update the user in localStorage since the auth context doesn't have an update method
-        localStorage.setItem('userId', newUser.id);
-      }
+      updateUser(updatedUser);
       
       setProfileSuccess('Profile updated successfully');
     } catch (error: any) {
