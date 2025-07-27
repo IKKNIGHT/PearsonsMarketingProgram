@@ -41,26 +41,31 @@ export const registerUser: RequestHandler = async (req, res) => {
 export const loginUser: RequestHandler = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log('Login attempt for username:', username);
 
     if (!username || !password) {
-      return res.status(400).json({ 
-        error: 'Username and password are required' 
+      return res.status(400).json({
+        error: 'Username and password are required'
       });
     }
 
     // Get user by username
     const user = await database.getUserByUsername(username);
+    console.log('User found:', user ? `${user.username} (${user.type})` : 'null');
+
     if (!user) {
-      return res.status(401).json({ 
-        error: 'Invalid username or password' 
+      return res.status(401).json({
+        error: 'Invalid username or password'
       });
     }
 
     // Verify password
     const isValidPassword = await database.verifyPassword(password, user.password);
+    console.log('Password valid:', isValidPassword);
+
     if (!isValidPassword) {
-      return res.status(401).json({ 
-        error: 'Invalid username or password' 
+      return res.status(401).json({
+        error: 'Invalid username or password'
       });
     }
 
