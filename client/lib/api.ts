@@ -11,24 +11,36 @@ import {
   CreateFeedbackRequest,
   CreateFeedbackResponse,
   ReelWithFeedback,
-  Reel
-} from '@shared/api';
+  Reel,
+} from "@shared/api";
 
-const API_BASE = '/api';
+const API_BASE = "/api";
 
 class ApiService {
-  async register(username: string, name: string, password: string, type: 'creator' | 'coach'): Promise<User> {
+  async register(
+    username: string,
+    name: string,
+    password: string,
+    type: "creator" | "coach",
+  ): Promise<User> {
     const response = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ username, name, password, type } as RegisterRequest),
+      body: JSON.stringify({
+        username,
+        name,
+        password,
+        type,
+      } as RegisterRequest),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Registration failed: ${response.statusText}`);
+      throw new Error(
+        errorData.error || `Registration failed: ${response.statusText}`,
+      );
     }
 
     const data: AuthResponse = await response.json();
@@ -37,16 +49,18 @@ class ApiService {
 
   async login(username: string, password: string): Promise<User> {
     const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ username, password } as LoginRequest),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Login failed: ${response.statusText}`);
+      throw new Error(
+        errorData.error || `Login failed: ${response.statusText}`,
+      );
     }
 
     const data: AuthResponse = await response.json();
@@ -64,36 +78,51 @@ class ApiService {
     return data.user;
   }
 
-  async updateProfile(id: string, updates: UpdateProfileRequest): Promise<User> {
+  async updateProfile(
+    id: string,
+    updates: UpdateProfileRequest,
+  ): Promise<User> {
     const response = await fetch(`${API_BASE}/auth/user/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(updates),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Update profile failed: ${response.statusText}`);
+      throw new Error(
+        errorData.error || `Update profile failed: ${response.statusText}`,
+      );
     }
 
     const data: UpdateProfileResponse = await response.json();
     return data.user;
   }
 
-  async createReel(url: string, creatorId: string, creatorName: string): Promise<Reel> {
+  async createReel(
+    url: string,
+    creatorId: string,
+    creatorName: string,
+  ): Promise<Reel> {
     const response = await fetch(`${API_BASE}/reels`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ url, creatorId, creatorName } as CreateReelRequest),
+      body: JSON.stringify({
+        url,
+        creatorId,
+        creatorName,
+      } as CreateReelRequest),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Create reel failed: ${response.statusText}${errorData.details ? ` - ${errorData.details}` : ''}`);
+      throw new Error(
+        `Create reel failed: ${response.statusText}${errorData.details ? ` - ${errorData.details}` : ""}`,
+      );
     }
 
     const data: CreateReelResponse = await response.json();
@@ -133,13 +162,23 @@ class ApiService {
     return data.reels;
   }
 
-  async createFeedback(reelId: string, coachId: string, coachName: string, content: string): Promise<void> {
+  async createFeedback(
+    reelId: string,
+    coachId: string,
+    coachName: string,
+    content: string,
+  ): Promise<void> {
     const response = await fetch(`${API_BASE}/feedback`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ reelId, coachId, coachName, content } as CreateFeedbackRequest),
+      body: JSON.stringify({
+        reelId,
+        coachId,
+        coachName,
+        content,
+      } as CreateFeedbackRequest),
     });
 
     if (!response.ok) {

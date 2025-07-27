@@ -8,7 +8,7 @@ export interface User {
   id: string;
   username: string;
   name: string;
-  type: 'creator' | 'coach';
+  type: "creator" | "coach";
   created_at: string;
 }
 
@@ -16,7 +16,7 @@ export interface RegisterRequest {
   username: string;
   name: string;
   password: string;
-  type: 'creator' | 'coach';
+  type: "creator" | "coach";
 }
 
 export interface LoginRequest {

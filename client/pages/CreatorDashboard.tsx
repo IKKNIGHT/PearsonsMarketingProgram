@@ -1,31 +1,53 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/lib/auth-context';
-import { api } from '@/lib/api';
-import { ReelWithFeedback } from '@shared/api';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Instagram, Clock, CheckCircle, LogOut, ExternalLink, MessageSquare, Settings } from 'lucide-react';
-import { format } from 'date-fns';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
+import { ReelWithFeedback } from "@shared/api";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Plus,
+  Instagram,
+  Clock,
+  CheckCircle,
+  LogOut,
+  ExternalLink,
+  MessageSquare,
+  Settings,
+} from "lucide-react";
+import { format } from "date-fns";
 
 export default function CreatorDashboard() {
   const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [reels, setReels] = useState<ReelWithFeedback[]>([]);
-  const [newReelUrl, setNewReelUrl] = useState('');
+  const [newReelUrl, setNewReelUrl] = useState("");
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingReels, setLoadingReels] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
-    
-    if (!user || user.type !== 'creator') {
-      navigate('/login');
+
+    if (!user || user.type !== "creator") {
+      navigate("/login");
       return;
     }
     loadReels();
@@ -33,13 +55,13 @@ export default function CreatorDashboard() {
 
   const loadReels = async () => {
     if (!user) return;
-    
+
     try {
       setLoadingReels(true);
       const userReels = await api.getReelsByCreator(user.id);
       setReels(userReels);
     } catch (error) {
-      console.error('Error loading reels:', error);
+      console.error("Error loading reels:", error);
     } finally {
       setLoadingReels(false);
     }
@@ -52,12 +74,12 @@ export default function CreatorDashboard() {
     try {
       setIsSubmitting(true);
       await api.createReel(newReelUrl.trim(), user.id, user.name);
-      setNewReelUrl('');
+      setNewReelUrl("");
       setIsSubmitDialogOpen(false);
       await loadReels();
     } catch (error) {
-      console.error('Error submitting reel:', error);
-      alert('Failed to submit reel. Please try again.');
+      console.error("Error submitting reel:", error);
+      alert("Failed to submit reel. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -65,12 +87,12 @@ export default function CreatorDashboard() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   const getReelId = (url: string) => {
     const match = url.match(/reel\/([A-Za-z0-9_-]+)/);
-    return match ? match[1].substring(0, 8) + '...' : 'Unknown';
+    return match ? match[1].substring(0, 8) + "..." : "Unknown";
   };
 
   if (isLoading) {
@@ -98,14 +120,20 @@ export default function CreatorDashboard() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user.name}</span>
+              <span className="text-sm text-gray-600">
+                Welcome, {user.name}
+              </span>
               <Link to="/profile">
                 <Button variant="outline" className="border-gray-200">
                   <Settings className="h-4 w-4 mr-2" />
                   Profile
                 </Button>
               </Link>
-              <Button variant="outline" onClick={handleLogout} className="border-gray-200">
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="border-gray-200"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </Button>
@@ -117,8 +145,13 @@ export default function CreatorDashboard() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Dashboard Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Creator Dashboard</h2>
-          <p className="text-gray-600">Manage your Instagram reel submissions and view feedback from coaches</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Creator Dashboard
+          </h2>
+          <p className="text-gray-600">
+            Manage your Instagram reel submissions and view feedback from
+            coaches
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -130,7 +163,9 @@ export default function CreatorDashboard() {
                   <Instagram className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{reels.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {reels.length}
+                  </p>
                   <p className="text-sm text-gray-600">Total Reels</p>
                 </div>
               </div>
@@ -144,7 +179,9 @@ export default function CreatorDashboard() {
                   <Clock className="h-6 w-6 text-yellow-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{reels.filter(r => !r.feedback).length}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {reels.filter((r) => !r.feedback).length}
+                  </p>
                   <p className="text-sm text-gray-600">Pending Review</p>
                 </div>
               </div>
@@ -158,7 +195,9 @@ export default function CreatorDashboard() {
                   <CheckCircle className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{reels.filter(r => r.feedback).length}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {reels.filter((r) => r.feedback).length}
+                  </p>
                   <p className="text-sm text-gray-600">Reviewed</p>
                 </div>
               </div>
@@ -168,7 +207,10 @@ export default function CreatorDashboard() {
 
         {/* Add Reel Button */}
         <div className="mb-8">
-          <Dialog open={isSubmitDialogOpen} onOpenChange={setIsSubmitDialogOpen}>
+          <Dialog
+            open={isSubmitDialogOpen}
+            onOpenChange={setIsSubmitDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
@@ -179,7 +221,8 @@ export default function CreatorDashboard() {
               <DialogHeader>
                 <DialogTitle>Submit Instagram Reel</DialogTitle>
                 <DialogDescription>
-                  Paste your Instagram reel URL below to submit it for coach review
+                  Paste your Instagram reel URL below to submit it for coach
+                  review
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmitReel} className="space-y-4">
@@ -195,11 +238,15 @@ export default function CreatorDashboard() {
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsSubmitDialogOpen(false)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsSubmitDialogOpen(false)}
+                  >
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Submitting...' : 'Submit Reel'}
+                    {isSubmitting ? "Submitting..." : "Submit Reel"}
                   </Button>
                 </div>
               </form>
@@ -220,9 +267,14 @@ export default function CreatorDashboard() {
             <Card className="border-0 bg-white/50 backdrop-blur-sm">
               <CardContent className="text-center py-12">
                 <Instagram className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No reels submitted yet</h3>
-                <p className="text-gray-600 mb-4">Submit your first Instagram reel to get started with professional feedback</p>
-                <Button 
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No reels submitted yet
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Submit your first Instagram reel to get started with
+                  professional feedback
+                </p>
+                <Button
                   onClick={() => setIsSubmitDialogOpen(true)}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                 >
@@ -234,21 +286,33 @@ export default function CreatorDashboard() {
           ) : (
             <div className="grid gap-4">
               {reels.map((reel) => (
-                <Card key={reel.id} className="border-0 bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow">
+                <Card
+                  key={reel.id}
+                  className="border-0 bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow"
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center mb-2">
                           <Instagram className="h-5 w-5 text-blue-600 mr-2" />
-                          <h3 className="font-semibold text-gray-900">Reel {getReelId(reel.url)}</h3>
-                          <Badge variant={reel.feedback ? "default" : "secondary"} className="ml-2">
+                          <h3 className="font-semibold text-gray-900">
+                            Reel {getReelId(reel.url)}
+                          </h3>
+                          <Badge
+                            variant={reel.feedback ? "default" : "secondary"}
+                            className="ml-2"
+                          >
                             {reel.feedback ? "Reviewed" : "Pending"}
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-600 mb-3">
-                          Submitted {format(new Date(reel.submitted_at), 'MMM d, yyyy at h:mm a')}
+                          Submitted{" "}
+                          {format(
+                            new Date(reel.submitted_at),
+                            "MMM d, yyyy at h:mm a",
+                          )}
                         </p>
-                        
+
                         {reel.feedback && (
                           <div className="bg-gray-50 rounded-lg p-4 mb-3">
                             <div className="flex items-center mb-2">
@@ -257,14 +321,19 @@ export default function CreatorDashboard() {
                                 Feedback from {reel.feedback.coach_name}
                               </span>
                               <span className="text-xs text-gray-500 ml-2">
-                                {format(new Date(reel.feedback.submitted_at), 'MMM d, yyyy')}
+                                {format(
+                                  new Date(reel.feedback.submitted_at),
+                                  "MMM d, yyyy",
+                                )}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{reel.feedback.content}</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                              {reel.feedback.content}
+                            </p>
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="ml-4">
                         <Button
                           variant="outline"
@@ -272,7 +341,11 @@ export default function CreatorDashboard() {
                           asChild
                           className="border-blue-200 text-blue-600 hover:bg-blue-50"
                         >
-                          <a href={reel.url} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={reel.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             <ExternalLink className="h-4 w-4 mr-2" />
                             View Reel
                           </a>

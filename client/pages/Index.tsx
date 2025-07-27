@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/lib/auth-context';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Instagram, Star, Users, MessageSquare } from 'lucide-react';
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Instagram, Star, Users, MessageSquare } from "lucide-react";
 
 export default function Index() {
   const { isAuthenticated, user } = useAuth();
@@ -11,7 +11,7 @@ export default function Index() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(user.type === 'creator' ? '/creator' : '/coach');
+      navigate(user.type === "creator" ? "/creator" : "/coach");
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -32,7 +32,10 @@ export default function Index() {
             </div>
             <div className="flex space-x-4">
               <Link to="/login">
-                <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                <Button
+                  variant="outline"
+                  className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                >
                   Sign In
                 </Button>
               </Link>
@@ -48,11 +51,15 @@ export default function Index() {
             Instagram Reel Feedback Platform
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Connect content creators with expert coaches for personalized feedback on Instagram reels. 
-            Improve your content strategy with professional insights.
+            Connect content creators with expert coaches for personalized
+            feedback on Instagram reels. Improve your content strategy with
+            professional insights.
           </p>
           <Link to="/login">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg">
+            <Button
+              size="lg"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg"
+            >
               Get Started
             </Button>
           </Link>
@@ -66,7 +73,8 @@ export default function Index() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Easy Submission</h3>
             <p className="text-gray-600">
-              Simply paste your Instagram reel URL and submit for professional review
+              Simply paste your Instagram reel URL and submit for professional
+              review
             </p>
           </Card>
 
@@ -76,7 +84,8 @@ export default function Index() {
             </div>
             <h3 className="text-xl font-semibold mb-2">Expert Coaches</h3>
             <p className="text-gray-600">
-              Get feedback from experienced marketing professionals and content strategists
+              Get feedback from experienced marketing professionals and content
+              strategists
             </p>
           </Card>
 
@@ -93,10 +102,14 @@ export default function Index() {
 
         {/* How it Works */}
         <div className="text-center">
-          <h3 className="text-3xl font-bold text-gray-900 mb-12">How It Works</h3>
+          <h3 className="text-3xl font-bold text-gray-900 mb-12">
+            How It Works
+          </h3>
           <div className="grid md:grid-cols-2 gap-12">
             <div className="text-left">
-              <h4 className="text-2xl font-semibold text-blue-600 mb-4">For Content Creators</h4>
+              <h4 className="text-2xl font-semibold text-blue-600 mb-4">
+                For Content Creators
+              </h4>
               <div className="space-y-4">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-4">
@@ -104,7 +117,9 @@ export default function Index() {
                   </div>
                   <div>
                     <h5 className="font-semibold">Submit Your Reel</h5>
-                    <p className="text-gray-600">Paste your Instagram reel URL into our simple form</p>
+                    <p className="text-gray-600">
+                      Paste your Instagram reel URL into our simple form
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -113,7 +128,9 @@ export default function Index() {
                   </div>
                   <div>
                     <h5 className="font-semibold">Wait for Review</h5>
-                    <p className="text-gray-600">Our expert coaches will analyze your content</p>
+                    <p className="text-gray-600">
+                      Our expert coaches will analyze your content
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -122,14 +139,18 @@ export default function Index() {
                   </div>
                   <div>
                     <h5 className="font-semibold">Get Feedback</h5>
-                    <p className="text-gray-600">Receive detailed insights to improve your content</p>
+                    <p className="text-gray-600">
+                      Receive detailed insights to improve your content
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="text-left">
-              <h4 className="text-2xl font-semibold text-purple-600 mb-4">For Coaches</h4>
+              <h4 className="text-2xl font-semibold text-purple-600 mb-4">
+                For Coaches
+              </h4>
               <div className="space-y-4">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-semibold mr-4">
@@ -137,7 +158,9 @@ export default function Index() {
                   </div>
                   <div>
                     <h5 className="font-semibold">Review Submissions</h5>
-                    <p className="text-gray-600">Access your dashboard to see pending reel reviews</p>
+                    <p className="text-gray-600">
+                      Access your dashboard to see pending reel reviews
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -146,7 +169,9 @@ export default function Index() {
                   </div>
                   <div>
                     <h5 className="font-semibold">Analyze Content</h5>
-                    <p className="text-gray-600">Watch and evaluate each Instagram reel submission</p>
+                    <p className="text-gray-600">
+                      Watch and evaluate each Instagram reel submission
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -155,7 +180,9 @@ export default function Index() {
                   </div>
                   <div>
                     <h5 className="font-semibold">Provide Feedback</h5>
-                    <p className="text-gray-600">Submit comprehensive feedback and recommendations</p>
+                    <p className="text-gray-600">
+                      Submit comprehensive feedback and recommendations
+                    </p>
                   </div>
                 </div>
               </div>

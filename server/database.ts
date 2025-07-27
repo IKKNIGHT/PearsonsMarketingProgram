@@ -1,11 +1,11 @@
-import sqlite3 from 'sqlite3';
-import bcrypt from 'bcrypt';
+import sqlite3 from "sqlite3";
+import bcrypt from "bcrypt";
 
 // Enable verbose mode for development
 const sqlite = sqlite3.verbose();
 
 // Database connection
-const db = new sqlite.Database('./database.sqlite');
+const db = new sqlite.Database("./database.sqlite");
 
 // Database interfaces
 export interface User {
@@ -13,7 +13,7 @@ export interface User {
   username: string;
   name: string;
   password: string;
-  type: 'creator' | 'coach';
+  type: "creator" | "coach";
   created_at: string;
 }
 
@@ -41,7 +41,7 @@ export interface ReelWithFeedback extends Reel {
 // Helper function to promisify database methods
 function dbRun(sql: string, params: any[] = []): Promise<void> {
   return new Promise((resolve, reject) => {
-    db.run(sql, params, function(err) {
+    db.run(sql, params, function (err) {
       if (err) reject(err);
       else resolve();
     });
@@ -107,9 +107,9 @@ export async function initializeDatabase() {
       )
     `);
 
-    console.log('Database initialized successfully');
+    console.log("Database initialized successfully");
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error("Error initializing database:", error);
     throw error;
   }
 }
@@ -117,36 +117,46 @@ export async function initializeDatabase() {
 // Database operations
 export const database = {
   // User operations
-  async createUser(username: string, name: string, password: string, type: 'creator' | 'coach'): Promise<User> {
+  async createUser(
+    username: string,
+    name: string,
+    password: string,
+    type: "creator" | "coach",
+  ): Promise<User> {
     const id = Date.now().toString();
     const created_at = new Date().toISOString();
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await dbRun(
-      'INSERT INTO users (id, username, name, password, type, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, username, name, hashedPassword, type, created_at]
+      "INSERT INTO users (id, username, name, password, type, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      [id, username, name, hashedPassword, type, created_at],
     );
 
     return { id, username, name, password: hashedPassword, type, created_at };
   },
 
   async getUserByUsername(username: string): Promise<User | null> {
-    const user = await dbGet(
-      'SELECT * FROM users WHERE username = ?',
-      [username]
-    ) as User | undefined;
+    const user = (await dbGet("SELECT * FROM users WHERE username = ?", [
+      username,
+    ])) as User | undefined;
 
     return user || null;
   },
 
-  async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  async verifyPassword(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
     return bcrypt.compare(password, hashedPassword);
   },
 
-  async updateUser(id: string, updates: { username?: string; name?: string; password?: string }): Promise<User> {
+  async updateUser(
+    id: string,
+    updates: { username?: string; name?: string; password?: string },
+  ): Promise<User> {
     const user = await this.getUserById(id);
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
     const updateFields: string[] = [];
@@ -156,20 +166,20 @@ export const database = {
       // Check if new username is already taken by another user
       const existingUser = await this.getUserByUsername(updates.username);
       if (existingUser && existingUser.id !== id) {
-        throw new Error('Username already exists');
+        throw new Error("Username already exists");
       }
-      updateFields.push('username = ?');
+      updateFields.push("username = ?");
       updateValues.push(updates.username);
     }
 
     if (updates.name !== undefined) {
-      updateFields.push('name = ?');
+      updateFields.push("name = ?");
       updateValues.push(updates.name);
     }
 
     if (updates.password !== undefined) {
       const hashedPassword = await bcrypt.hash(updates.password, 10);
-      updateFields.push('password = ?');
+      updateFields.push("password = ?");
       updateValues.push(hashedPassword);
     }
 
@@ -178,88 +188,99 @@ export const database = {
     }
 
     updateValues.push(id);
-    const sql = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+    const sql = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
 
     await dbRun(sql, updateValues);
 
     // Return updated user
     const updatedUser = await this.getUserById(id);
     if (!updatedUser) {
-      throw new Error('Failed to retrieve updated user');
+      throw new Error("Failed to retrieve updated user");
     }
 
     return updatedUser;
   },
 
   async getUserById(id: string): Promise<User | null> {
-    const user = await dbGet(
-      'SELECT * FROM users WHERE id = ?',
-      [id]
-    ) as User | undefined;
-    
+    const user = (await dbGet("SELECT * FROM users WHERE id = ?", [id])) as
+      | User
+      | undefined;
+
     return user || null;
   },
 
   // Reel operations
-  async createReel(url: string, creatorId: string, creatorName: string): Promise<Reel> {
+  async createReel(
+    url: string,
+    creatorId: string,
+    creatorName: string,
+  ): Promise<Reel> {
     const id = Date.now().toString();
     const submitted_at = new Date().toISOString();
-    
+
     await dbRun(
-      'INSERT INTO reels (id, url, creator_id, creator_name, submitted_at) VALUES (?, ?, ?, ?, ?)',
-      [id, url, creatorId, creatorName, submitted_at]
+      "INSERT INTO reels (id, url, creator_id, creator_name, submitted_at) VALUES (?, ?, ?, ?, ?)",
+      [id, url, creatorId, creatorName, submitted_at],
     );
-    
-    return { id, url, creator_id: creatorId, creator_name: creatorName, submitted_at };
+
+    return {
+      id,
+      url,
+      creator_id: creatorId,
+      creator_name: creatorName,
+      submitted_at,
+    };
   },
 
   async getReelsByCreator(creatorId: string): Promise<ReelWithFeedback[]> {
-    const reels = await dbAll(
+    const reels = (await dbAll(
       `SELECT r.*, f.id as feedback_id, f.coach_id, f.coach_name, f.content as feedback_content, f.submitted_at as feedback_submitted_at
        FROM reels r
        LEFT JOIN feedback f ON r.id = f.reel_id
        WHERE r.creator_id = ?
        ORDER BY r.submitted_at DESC`,
-      [creatorId]
-    ) as any[];
+      [creatorId],
+    )) as any[];
 
-    return reels.map(row => ({
+    return reels.map((row) => ({
       id: row.id,
       url: row.url,
       creator_id: row.creator_id,
       creator_name: row.creator_name,
       submitted_at: row.submitted_at,
-      feedback: row.feedback_id ? {
-        id: row.feedback_id,
-        reel_id: row.id,
-        coach_id: row.coach_id,
-        coach_name: row.coach_name,
-        content: row.feedback_content,
-        submitted_at: row.feedback_submitted_at
-      } : undefined
+      feedback: row.feedback_id
+        ? {
+            id: row.feedback_id,
+            reel_id: row.id,
+            coach_id: row.coach_id,
+            coach_name: row.coach_name,
+            content: row.feedback_content,
+            submitted_at: row.feedback_submitted_at,
+          }
+        : undefined,
     }));
   },
 
   async getReelsWithoutFeedback(): Promise<Reel[]> {
-    const reels = await dbAll(
+    const reels = (await dbAll(
       `SELECT r.* FROM reels r
        LEFT JOIN feedback f ON r.id = f.reel_id
        WHERE f.id IS NULL
-       ORDER BY r.submitted_at ASC`
-    ) as Reel[];
-    
+       ORDER BY r.submitted_at ASC`,
+    )) as Reel[];
+
     return reels;
   },
 
   async getReelsWithFeedback(): Promise<ReelWithFeedback[]> {
-    const reels = await dbAll(
+    const reels = (await dbAll(
       `SELECT r.*, f.id as feedback_id, f.coach_id, f.coach_name, f.content as feedback_content, f.submitted_at as feedback_submitted_at
        FROM reels r
        INNER JOIN feedback f ON r.id = f.reel_id
-       ORDER BY f.submitted_at DESC`
-    ) as any[];
+       ORDER BY f.submitted_at DESC`,
+    )) as any[];
 
-    return reels.map(row => ({
+    return reels.map((row) => ({
       id: row.id,
       url: row.url,
       creator_id: row.creator_id,
@@ -271,30 +292,41 @@ export const database = {
         coach_id: row.coach_id,
         coach_name: row.coach_name,
         content: row.feedback_content,
-        submitted_at: row.feedback_submitted_at
-      }
+        submitted_at: row.feedback_submitted_at,
+      },
     }));
   },
 
   // Feedback operations
-  async createFeedback(reelId: string, coachId: string, coachName: string, content: string): Promise<Feedback> {
+  async createFeedback(
+    reelId: string,
+    coachId: string,
+    coachName: string,
+    content: string,
+  ): Promise<Feedback> {
     const id = Date.now().toString();
     const submitted_at = new Date().toISOString();
-    
+
     await dbRun(
-      'INSERT INTO feedback (id, reel_id, coach_id, coach_name, content, submitted_at) VALUES (?, ?, ?, ?, ?, ?)',
-      [id, reelId, coachId, coachName, content, submitted_at]
+      "INSERT INTO feedback (id, reel_id, coach_id, coach_name, content, submitted_at) VALUES (?, ?, ?, ?, ?, ?)",
+      [id, reelId, coachId, coachName, content, submitted_at],
     );
-    
-    return { id, reel_id: reelId, coach_id: coachId, coach_name: coachName, content, submitted_at };
+
+    return {
+      id,
+      reel_id: reelId,
+      coach_id: coachId,
+      coach_name: coachName,
+      content,
+      submitted_at,
+    };
   },
 
   async getFeedbackByReelId(reelId: string): Promise<Feedback | null> {
-    const feedback = await dbGet(
-      'SELECT * FROM feedback WHERE reel_id = ?',
-      [reelId]
-    ) as Feedback | undefined;
-    
+    const feedback = (await dbGet("SELECT * FROM feedback WHERE reel_id = ?", [
+      reelId,
+    ])) as Feedback | undefined;
+
     return feedback || null;
-  }
+  },
 };

@@ -1,40 +1,46 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '@/lib/auth-context';
-import { api } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, User, Lock, Save, Eye, EyeOff, LogOut } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, User, Lock, Save, Eye, EyeOff, LogOut } from "lucide-react";
 
 export default function Profile() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
-  
-  const [username, setUsername] = useState('');
-  const [name, setName] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [profileError, setProfileError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [profileSuccess, setProfileSuccess] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [profileError, setProfileError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
-    
+
     setUsername(user.username);
     setName(user.name);
   }, [user, navigate]);
@@ -45,21 +51,21 @@ export default function Profile() {
 
     try {
       setIsUpdatingProfile(true);
-      setProfileError('');
-      setProfileSuccess('');
+      setProfileError("");
+      setProfileSuccess("");
 
       const updates: { username?: string; name?: string } = {};
-      
+
       if (username.trim() !== user.username) {
         updates.username = username.trim();
       }
-      
+
       if (name.trim() !== user.name) {
         updates.name = name.trim();
       }
 
       if (Object.keys(updates).length === 0) {
-        setProfileSuccess('No changes to save');
+        setProfileSuccess("No changes to save");
         return;
       }
 
@@ -67,11 +73,11 @@ export default function Profile() {
 
       // Update user in auth context
       updateUser(updatedUser);
-      
-      setProfileSuccess('Profile updated successfully');
+
+      setProfileSuccess("Profile updated successfully");
     } catch (error: any) {
-      console.error('Profile update error:', error);
-      setProfileError(error.message || 'Failed to update profile');
+      console.error("Profile update error:", error);
+      setProfileError(error.message || "Failed to update profile");
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -83,41 +89,41 @@ export default function Profile() {
 
     try {
       setIsUpdatingPassword(true);
-      setPasswordError('');
-      setPasswordSuccess('');
+      setPasswordError("");
+      setPasswordSuccess("");
 
       if (!currentPassword) {
-        setPasswordError('Current password is required');
+        setPasswordError("Current password is required");
         return;
       }
 
       if (!newPassword) {
-        setPasswordError('New password is required');
+        setPasswordError("New password is required");
         return;
       }
 
       if (newPassword.length < 6) {
-        setPasswordError('New password must be at least 6 characters long');
+        setPasswordError("New password must be at least 6 characters long");
         return;
       }
 
       if (newPassword !== confirmPassword) {
-        setPasswordError('New passwords do not match');
+        setPasswordError("New passwords do not match");
         return;
       }
 
       await api.updateProfile(user.id, {
         password: newPassword,
-        currentPassword: currentPassword
+        currentPassword: currentPassword,
       });
 
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setPasswordSuccess('Password updated successfully');
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSuccess("Password updated successfully");
     } catch (error: any) {
-      console.error('Password update error:', error);
-      setPasswordError(error.message || 'Failed to update password');
+      console.error("Password update error:", error);
+      setPasswordError(error.message || "Failed to update password");
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -125,12 +131,12 @@ export default function Profile() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   if (!user) return null;
 
-  const dashboardPath = user.type === 'creator' ? '/creator' : '/coach';
+  const dashboardPath = user.type === "creator" ? "/creator" : "/coach";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -139,7 +145,10 @@ export default function Profile() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Link to={dashboardPath} className="flex items-center text-gray-600 hover:text-gray-900 mr-8">
+              <Link
+                to={dashboardPath}
+                className="flex items-center text-gray-600 hover:text-gray-900 mr-8"
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
               </Link>
@@ -149,7 +158,11 @@ export default function Profile() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Profile Settings</span>
-              <Button variant="outline" onClick={handleLogout} className="border-gray-200">
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="border-gray-200"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </Button>
@@ -161,8 +174,12 @@ export default function Profile() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Profile Settings</h2>
-          <p className="text-gray-600">Manage your account information and security settings</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Profile Settings
+          </h2>
+          <p className="text-gray-600">
+            Manage your account information and security settings
+          </p>
         </div>
 
         <div className="space-y-6">
@@ -205,9 +222,13 @@ export default function Profile() {
                 <div className="space-y-2">
                   <Label>Account Type</Label>
                   <div className="p-3 bg-gray-50 rounded-lg">
-                    <span className="capitalize font-medium text-gray-900">{user.type}</span>
+                    <span className="capitalize font-medium text-gray-900">
+                      {user.type}
+                    </span>
                     <p className="text-sm text-gray-600 mt-1">
-                      {user.type === 'creator' ? 'Submit reels and receive feedback' : 'Review reels and provide feedback'}
+                      {user.type === "creator"
+                        ? "Submit reels and receive feedback"
+                        : "Review reels and provide feedback"}
                     </p>
                   </div>
                 </div>
@@ -224,13 +245,13 @@ export default function Profile() {
                   </div>
                 )}
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isUpdatingProfile}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {isUpdatingProfile ? 'Saving...' : 'Save Changes'}
+                  {isUpdatingProfile ? "Saving..." : "Save Changes"}
                 </Button>
               </form>
             </CardContent>
@@ -254,7 +275,7 @@ export default function Profile() {
                   <div className="relative">
                     <Input
                       id="current-password"
-                      type={showCurrentPassword ? 'text' : 'password'}
+                      type={showCurrentPassword ? "text" : "password"}
                       placeholder="Enter your current password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
@@ -262,10 +283,16 @@ export default function Profile() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      onClick={() =>
+                        setShowCurrentPassword(!showCurrentPassword)
+                      }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                     >
-                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showCurrentPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -278,7 +305,7 @@ export default function Profile() {
                     <div className="relative">
                       <Input
                         id="new-password"
-                        type={showNewPassword ? 'text' : 'password'}
+                        type={showNewPassword ? "text" : "password"}
                         placeholder="Enter new password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
@@ -289,16 +316,22 @@ export default function Profile() {
                         onClick={() => setShowNewPassword(!showNewPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                       >
-                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showNewPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Label htmlFor="confirm-password">
+                      Confirm New Password
+                    </Label>
                     <div className="relative">
                       <Input
                         id="confirm-password"
-                        type={showConfirmPassword ? 'text' : 'password'}
+                        type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm new password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -306,10 +339,16 @@ export default function Profile() {
                       />
                       <button
                         type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                       >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -327,13 +366,13 @@ export default function Profile() {
                   </div>
                 )}
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isUpdatingPassword}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                 >
                   <Lock className="h-4 w-4 mr-2" />
-                  {isUpdatingPassword ? 'Updating...' : 'Update Password'}
+                  {isUpdatingPassword ? "Updating..." : "Update Password"}
                 </Button>
               </form>
             </CardContent>
