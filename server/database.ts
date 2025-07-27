@@ -9,7 +9,9 @@ const db = new sqlite.Database('./database.sqlite');
 // Database interfaces
 export interface User {
   id: string;
+  username: string;
   name: string;
+  password: string;
   type: 'creator' | 'coach';
   created_at: string;
 }
@@ -70,7 +72,9 @@ export async function initializeDatabase() {
     await dbRun(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
         name TEXT NOT NULL,
+        password TEXT NOT NULL,
         type TEXT NOT NULL CHECK (type IN ('creator', 'coach')),
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
