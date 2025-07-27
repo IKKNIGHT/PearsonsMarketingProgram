@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { initializeDatabase } from "./database";
-import { loginUser, getUserById } from "./routes/auth";
+import { registerUser, loginUser, getUserById } from "./routes/auth";
 import { createReel, getReelsByCreator, getReelsWithoutFeedback, getReelsWithFeedback } from "./routes/reels";
 import { createFeedback, getFeedbackByReelId } from "./routes/feedback";
 
@@ -27,6 +27,7 @@ export function createServer() {
   app.get("/api/demo", handleDemo);
 
   // Authentication routes
+  app.post("/api/auth/register", registerUser);
   app.post("/api/auth/login", loginUser);
   app.get("/api/auth/user/:id", getUserById);
 
