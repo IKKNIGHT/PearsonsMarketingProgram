@@ -5,10 +5,11 @@ import { database } from "../database";
 export const registerUser: RequestHandler = async (req, res) => {
   try {
     const { username, name, password, type } = req.body;
+    console.log('Registration attempt:', { username, name, type });
 
     if (!username || !name || !password || !type || !['creator', 'coach'].includes(type)) {
-      return res.status(400).json({ 
-        error: 'Username, name, password, and valid type (creator/coach) are required' 
+      return res.status(400).json({
+        error: 'Username, name, password, and valid type (creator/coach) are required'
       });
     }
 
