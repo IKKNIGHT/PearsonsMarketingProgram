@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth-context';
-import { storage, Reel } from '@/lib/storage';
+import { api } from '@/lib/api';
+import { Reel, ReelWithFeedback } from '@shared/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,40 +13,63 @@ import { Instagram, MessageSquare, Users, CheckCircle, LogOut, ExternalLink, Sen
 import { format } from 'date-fns';
 
 export default function CoachDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [pendingReels, setPendingReels] = useState<Reel[]>([]);
-  const [reviewedReels, setReviewedReels] = useState<Reel[]>([]);
+  const [reviewedReels, setReviewedReels] = useState<ReelWithFeedback[]>([]);
   const [selectedReel, setSelectedReel] = useState<Reel | null>(null);
   const [feedback, setFeedback] = useState('');
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [loadingPending, setLoadingPending] = useState(false);
+  const [loadingReviewed, setLoadingReviewed] = useState(false);
 
   useEffect(() => {
+    if (isLoading) return;
+    
     if (!user || user.type !== 'coach') {
       navigate('/login');
       return;
     }
     loadReels();
-  }, [user, navigate]);
+  }, [user, navigate, isLoading]);
 
-  const loadReels = () => {
-    const allReels = storage.getReels();
-    setPendingReels(allReels.filter(reel => !reel.feedback));
-    setReviewedReels(allReels.filter(reel => reel.feedback));
+  const loadReels = async () => {
+    try {
+      setLoadingPending(true);
+      setLoadingReviewed(true);
+      
+      const [pending, reviewed] = await Promise.all([
+        api.getReelsWithoutFeedback(),
+        api.getReelsWithFeedback()
+      ]);
+      
+      setPendingReels(pending);
+      setReviewedReels(reviewed);
+    } catch (error) {
+      console.error('Error loading reels:', error);
+    } finally {
+      setLoadingPending(false);
+      setLoadingReviewed(false);
+    }
   };
 
-  const handleSubmitFeedback = (e: React.FormEvent) => {
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedReel && feedback.trim() && user) {
-      storage.addFeedback(selectedReel.id, {
-        coachId: user.id,
-        coachName: user.name,
-        content: feedback.trim()
-      });
+    if (!selectedReel || !feedback.trim() || !user || isSubmittingFeedback) return;
+
+    try {
+      setIsSubmittingFeedback(true);
+      await api.createFeedback(selectedReel.id, user.id, user.name, feedback.trim());
       setFeedback('');
       setSelectedReel(null);
       setIsFeedbackDialogOpen(false);
-      loadReels();
+      await loadReels();
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Failed to submit feedback. Please try again.');
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -64,6 +88,17 @@ export default function CoachDashboard() {
     const match = url.match(/reel\/([A-Za-z0-9_-]+)/);
     return match ? match[1].substring(0, 8) + '...' : 'Unknown';
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -134,7 +169,7 @@ export default function CoachDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">
-                    {new Set([...pendingReels, ...reviewedReels].map(r => r.creatorId)).size}
+                    {new Set([...pendingReels, ...reviewedReels].map(r => r.creator_id)).size}
                   </p>
                   <p className="text-sm text-gray-600">Creators</p>
                 </div>
@@ -146,7 +181,14 @@ export default function CoachDashboard() {
         {/* Pending Reviews */}
         <div className="mb-8">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Pending Reviews</h3>
-          {pendingReels.length === 0 ? (
+          {loadingPending ? (
+            <Card className="border-0 bg-white/50 backdrop-blur-sm">
+              <CardContent className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading pending reviews...</p>
+              </CardContent>
+            </Card>
+          ) : pendingReels.length === 0 ? (
             <Card className="border-0 bg-white/50 backdrop-blur-sm">
               <CardContent className="text-center py-12">
                 <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -167,10 +209,10 @@ export default function CoachDashboard() {
                           <Badge variant="secondary" className="ml-2">Pending</Badge>
                         </div>
                         <p className="text-sm text-gray-600 mb-2">
-                          <strong>Creator:</strong> {reel.creatorName}
+                          <strong>Creator:</strong> {reel.creator_name}
                         </p>
                         <p className="text-sm text-gray-600 mb-3">
-                          Submitted {format(new Date(reel.submittedAt), 'MMM d, yyyy at h:mm a')}
+                          Submitted {format(new Date(reel.submitted_at), 'MMM d, yyyy at h:mm a')}
                         </p>
                       </div>
                       
@@ -206,7 +248,14 @@ export default function CoachDashboard() {
         {/* Recent Reviews */}
         <div>
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Recent Reviews</h3>
-          {reviewedReels.length === 0 ? (
+          {loadingReviewed ? (
+            <Card className="border-0 bg-white/50 backdrop-blur-sm">
+              <CardContent className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading recent reviews...</p>
+              </CardContent>
+            </Card>
+          ) : reviewedReels.length === 0 ? (
             <Card className="border-0 bg-white/50 backdrop-blur-sm">
               <CardContent className="text-center py-12">
                 <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -227,10 +276,10 @@ export default function CoachDashboard() {
                           <Badge variant="default" className="ml-2">Reviewed</Badge>
                         </div>
                         <p className="text-sm text-gray-600 mb-2">
-                          <strong>Creator:</strong> {reel.creatorName}
+                          <strong>Creator:</strong> {reel.creator_name}
                         </p>
                         <p className="text-sm text-gray-600 mb-3">
-                          Reviewed {format(new Date(reel.feedback!.submittedAt), 'MMM d, yyyy at h:mm a')}
+                          Reviewed {format(new Date(reel.feedback!.submitted_at), 'MMM d, yyyy at h:mm a')}
                         </p>
                         <div className="bg-gray-50 rounded-lg p-3">
                           <p className="text-sm text-gray-700 line-clamp-3">{reel.feedback!.content}</p>
@@ -265,7 +314,7 @@ export default function CoachDashboard() {
           <DialogHeader>
             <DialogTitle>Add Feedback</DialogTitle>
             <DialogDescription>
-              Provide comprehensive feedback for {selectedReel?.creatorName}'s Instagram reel
+              Provide comprehensive feedback for {selectedReel?.creator_name}'s Instagram reel
             </DialogDescription>
           </DialogHeader>
           
@@ -275,7 +324,7 @@ export default function CoachDashboard() {
                 <strong>Reel:</strong> {getReelId(selectedReel.url)}
               </p>
               <p className="text-sm text-gray-600">
-                <strong>Creator:</strong> {selectedReel.creatorName}
+                <strong>Creator:</strong> {selectedReel.creator_name}
               </p>
               <Button
                 variant="link"
@@ -315,10 +364,11 @@ export default function CoachDashboard() {
               </Button>
               <Button 
                 type="submit"
+                disabled={isSubmittingFeedback}
                 className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
               >
                 <Send className="h-4 w-4 mr-2" />
-                Submit Feedback
+                {isSubmittingFeedback ? 'Submitting...' : 'Submit Feedback'}
               </Button>
             </div>
           </form>
