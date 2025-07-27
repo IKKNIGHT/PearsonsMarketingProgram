@@ -1,9 +1,5 @@
 import serverless from "serverless-http";
+
 import { createServer } from "../../server";
 
-const app = createServer();
-
-export const handler = serverless(app, {
-  // Configure for Netlify
-  binary: false,
-});
+export const handler = serverless(createServer());
