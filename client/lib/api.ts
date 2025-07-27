@@ -64,6 +64,24 @@ class ApiService {
     return data.user;
   }
 
+  async updateProfile(id: string, updates: UpdateProfileRequest): Promise<User> {
+    const response = await fetch(`${API_BASE}/auth/user/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Update profile failed: ${response.statusText}`);
+    }
+
+    const data: UpdateProfileResponse = await response.json();
+    return data.user;
+  }
+
   async createReel(url: string, creatorId: string, creatorName: string): Promise<Reel> {
     const response = await fetch(`${API_BASE}/reels`, {
       method: 'POST',
