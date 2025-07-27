@@ -14,11 +14,21 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
-      login(name.trim(), userType);
-      navigate(userType === 'creator' ? '/creator' : '/coach');
+    if (name.trim() && !isLoading) {
+      try {
+        setIsLoading(true);
+        await login(name.trim(), userType);
+        navigate(userType === 'creator' ? '/creator' : '/coach');
+      } catch (error) {
+        console.error('Login failed:', error);
+        alert('Login failed. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
