@@ -25,8 +25,30 @@ export function createServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Initialize database
-  initializeDatabase().catch(console.error);
+  // Initialize database lazily for serverless environments
+  let dbInitialized = false;
+  const ensureDbInitialized = async () => {
+    if (!dbInitialized) {
+      try {
+        await initializeDatabase();
+        dbInitialized = true;
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        throw error;
+      }
+    }
+  };
+
+  // Middleware to ensure database is initialized before handling requests
+  app.use(async (req, res, next) => {
+    try {
+      await ensureDbInitialized();
+      next();
+    } catch (error) {
+      console.error('Database initialization failed:', error);
+      res.status(500).json({ error: 'Database unavailable' });
+    }
+  });
 
   // Existing API routes
   app.get("/api/ping", (_req, res) => {
