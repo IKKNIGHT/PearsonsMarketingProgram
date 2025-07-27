@@ -6,7 +6,8 @@ export type UserType = 'creator' | 'coach';
 
 interface AuthContextType {
   user: User | null;
-  login: (name: string, type: UserType) => Promise<void>;
+  register: (username: string, name: string, password: string, type: UserType) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -34,9 +35,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (name: string, type: UserType) => {
+  const register = async (username: string, name: string, password: string, type: UserType) => {
     try {
-      const user = await api.login(name, type);
+      const user = await api.register(username, name, password, type);
+      setUser(user);
+      localStorage.setItem('userId', user.id);
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
+  };
+
+  const login = async (username: string, password: string) => {
+    try {
+      const user = await api.login(username, password);
       setUser(user);
       localStorage.setItem('userId', user.id);
     } catch (error) {
@@ -53,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user,
+      register,
       login,
       logout,
       isAuthenticated: !!user,
