@@ -1,50 +1,65 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth-context';
-import { storage, Reel } from '@/lib/storage';
+import { api } from '@/lib/api';
+import { ReelWithFeedback } from '@shared/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Plus, Instagram, Clock, CheckCircle, LogOut, ExternalLink, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function CreatorDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [reels, setReels] = useState<Reel[]>([]);
+  const [reels, setReels] = useState<ReelWithFeedback[]>([]);
   const [newReelUrl, setNewReelUrl] = useState('');
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadingReels, setLoadingReels] = useState(false);
 
   useEffect(() => {
+    if (isLoading) return;
+    
     if (!user || user.type !== 'creator') {
       navigate('/login');
       return;
     }
     loadReels();
-  }, [user, navigate]);
+  }, [user, navigate, isLoading]);
 
-  const loadReels = () => {
-    if (user) {
-      const userReels = storage.getReelsByCreator(user.id);
+  const loadReels = async () => {
+    if (!user) return;
+    
+    try {
+      setLoadingReels(true);
+      const userReels = await api.getReelsByCreator(user.id);
       setReels(userReels);
+    } catch (error) {
+      console.error('Error loading reels:', error);
+    } finally {
+      setLoadingReels(false);
     }
   };
 
-  const handleSubmitReel = (e: React.FormEvent) => {
+  const handleSubmitReel = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newReelUrl.trim() && user) {
-      storage.saveReel({
-        url: newReelUrl.trim(),
-        creatorId: user.id,
-        creatorName: user.name
-      });
+    if (!newReelUrl.trim() || !user || isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      await api.createReel(newReelUrl.trim(), user.id, user.name);
       setNewReelUrl('');
       setIsSubmitDialogOpen(false);
-      loadReels();
+      await loadReels();
+    } catch (error) {
+      console.error('Error submitting reel:', error);
+      alert('Failed to submit reel. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -54,10 +69,20 @@ export default function CreatorDashboard() {
   };
 
   const getReelId = (url: string) => {
-    // Extract reel ID from Instagram URL for display
     const match = url.match(/reel\/([A-Za-z0-9_-]+)/);
     return match ? match[1].substring(0, 8) + '...' : 'Unknown';
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -167,7 +192,9 @@ export default function CreatorDashboard() {
                   <Button type="button" variant="outline" onClick={() => setIsSubmitDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">Submit Reel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Submitting...' : 'Submit Reel'}
+                  </Button>
                 </div>
               </form>
             </DialogContent>
@@ -176,7 +203,14 @@ export default function CreatorDashboard() {
 
         {/* Reels List */}
         <div className="space-y-4">
-          {reels.length === 0 ? (
+          {loadingReels ? (
+            <Card className="border-0 bg-white/50 backdrop-blur-sm">
+              <CardContent className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your reels...</p>
+              </CardContent>
+            </Card>
+          ) : reels.length === 0 ? (
             <Card className="border-0 bg-white/50 backdrop-blur-sm">
               <CardContent className="text-center py-12">
                 <Instagram className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -206,7 +240,7 @@ export default function CreatorDashboard() {
                           </Badge>
                         </div>
                         <p className="text-sm text-gray-600 mb-3">
-                          Submitted {format(new Date(reel.submittedAt), 'MMM d, yyyy at h:mm a')}
+                          Submitted {format(new Date(reel.submitted_at), 'MMM d, yyyy at h:mm a')}
                         </p>
                         
                         {reel.feedback && (
@@ -214,10 +248,10 @@ export default function CreatorDashboard() {
                             <div className="flex items-center mb-2">
                               <MessageSquare className="h-4 w-4 text-purple-600 mr-2" />
                               <span className="text-sm font-medium text-gray-900">
-                                Feedback from {reel.feedback.coachName}
+                                Feedback from {reel.feedback.coach_name}
                               </span>
                               <span className="text-xs text-gray-500 ml-2">
-                                {format(new Date(reel.feedback.submittedAt), 'MMM d, yyyy')}
+                                {format(new Date(reel.feedback.submitted_at), 'MMM d, yyyy')}
                               </span>
                             </div>
                             <p className="text-sm text-gray-700 whitespace-pre-wrap">{reel.feedback.content}</p>
