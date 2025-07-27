@@ -90,8 +90,8 @@ export default function Login() {
           <CardContent>
             <Tabs value={isRegister ? 'register' : 'login'} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Sign In</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="register">Create Account</TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
