@@ -143,6 +143,54 @@ export const database = {
     return bcrypt.compare(password, hashedPassword);
   },
 
+  async updateUser(id: string, updates: { username?: string; name?: string; password?: string }): Promise<User> {
+    const user = await this.getUserById(id);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const updateFields: string[] = [];
+    const updateValues: any[] = [];
+
+    if (updates.username !== undefined) {
+      // Check if new username is already taken by another user
+      const existingUser = await this.getUserByUsername(updates.username);
+      if (existingUser && existingUser.id !== id) {
+        throw new Error('Username already exists');
+      }
+      updateFields.push('username = ?');
+      updateValues.push(updates.username);
+    }
+
+    if (updates.name !== undefined) {
+      updateFields.push('name = ?');
+      updateValues.push(updates.name);
+    }
+
+    if (updates.password !== undefined) {
+      const hashedPassword = await bcrypt.hash(updates.password, 10);
+      updateFields.push('password = ?');
+      updateValues.push(hashedPassword);
+    }
+
+    if (updateFields.length === 0) {
+      return user;
+    }
+
+    updateValues.push(id);
+    const sql = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+
+    await dbRun(sql, updateValues);
+
+    // Return updated user
+    const updatedUser = await this.getUserById(id);
+    if (!updatedUser) {
+      throw new Error('Failed to retrieve updated user');
+    }
+
+    return updatedUser;
+  },
+
   async getUserById(id: string): Promise<User | null> {
     const user = await dbGet(
       'SELECT * FROM users WHERE id = ?',
