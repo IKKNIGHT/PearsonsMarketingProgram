@@ -3,6 +3,8 @@ import {
   RegisterRequest,
   LoginRequest,
   AuthResponse,
+  UpdateProfileRequest,
+  UpdateProfileResponse,
   CreateReelRequest,
   CreateReelResponse,
   GetReelsResponse,
