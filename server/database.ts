@@ -1,4 +1,5 @@
 import sqlite3 from 'sqlite3';
+import bcrypt from 'bcrypt';
 
 // Enable verbose mode for development
 const sqlite = sqlite3.verbose();
@@ -116,25 +117,30 @@ export async function initializeDatabase() {
 // Database operations
 export const database = {
   // User operations
-  async createUser(name: string, type: 'creator' | 'coach'): Promise<User> {
+  async createUser(username: string, name: string, password: string, type: 'creator' | 'coach'): Promise<User> {
     const id = Date.now().toString();
     const created_at = new Date().toISOString();
-    
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     await dbRun(
-      'INSERT INTO users (id, name, type, created_at) VALUES (?, ?, ?, ?)',
-      [id, name, type, created_at]
+      'INSERT INTO users (id, username, name, password, type, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, username, name, hashedPassword, type, created_at]
     );
-    
-    return { id, name, type, created_at };
+
+    return { id, username, name, password: hashedPassword, type, created_at };
   },
 
-  async getUserByNameAndType(name: string, type: 'creator' | 'coach'): Promise<User | null> {
+  async getUserByUsername(username: string): Promise<User | null> {
     const user = await dbGet(
-      'SELECT * FROM users WHERE name = ? AND type = ?',
-      [name, type]
+      'SELECT * FROM users WHERE username = ?',
+      [username]
     ) as User | undefined;
-    
+
     return user || null;
+  },
+
+  async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    return bcrypt.compare(password, hashedPassword);
   },
 
   async getUserById(id: string): Promise<User | null> {
