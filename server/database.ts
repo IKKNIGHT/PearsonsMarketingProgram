@@ -5,10 +5,7 @@ import bcrypt from "bcrypt";
 const sqlite = sqlite3.verbose();
 
 // Database connection - use /tmp directory for serverless environments like Netlify
-const dbPath =
-  process.env.NODE_ENV === "production"
-    ? "/tmp/database.sqlite"
-    : "./database.sqlite";
+const dbPath = process.env.NODE_ENV === 'production' ? '/tmp/database.sqlite' : './database.sqlite';
 const db = new sqlite.Database(dbPath);
 
 // Database interfaces
@@ -73,7 +70,7 @@ function dbAll(sql: string, params: any[] = []): Promise<any[]> {
 // Initialize database tables
 export async function initializeDatabase() {
   try {
-    console.log("Initializing database at path:", dbPath);
+    console.log('Initializing database at path:', dbPath);
 
     // Users table
     await dbRun(`
