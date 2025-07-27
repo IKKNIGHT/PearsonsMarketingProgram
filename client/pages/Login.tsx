@@ -28,14 +28,15 @@ export default function Login() {
     try {
       setIsLoading(true);
       setError('');
-      
+
       if (isRegister) {
         await register(username.trim(), name.trim(), password, userType);
+        navigate(userType === 'creator' ? '/creator' : '/coach');
       } else {
         await login(username.trim(), password);
+        // Navigation will be handled by the useEffect in Index.tsx based on actual user type
+        navigate('/');
       }
-      
-      navigate(userType === 'creator' ? '/creator' : '/coach');
     } catch (error: any) {
       console.error('Authentication failed:', error);
       setError(error.message || 'Authentication failed. Please try again.');
