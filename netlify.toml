@@ -1,11 +1,13 @@
 [build]
-  command = "npm run build:client"
+  command = "npm run build"
   functions = "netlify/functions"
   publish = "dist/spa"
 
+[build.environment]
+  NODE_ENV = "production"
 
 [functions]
-  external_node_modules = ["express"]
+  external_node_modules = ["express", "sqlite3", "bcrypt"]
   node_bundler = "esbuild"
   
 [[redirects]]
