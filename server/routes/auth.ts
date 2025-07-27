@@ -1,26 +1,72 @@
 import { RequestHandler } from "express";
 import { database } from "../database";
 
-// Login/Register user
-export const loginUser: RequestHandler = async (req, res) => {
+// Register new user
+export const registerUser: RequestHandler = async (req, res) => {
   try {
-    const { name, type } = req.body;
+    const { username, name, password, type } = req.body;
 
-    if (!name || !type || !['creator', 'coach'].includes(type)) {
+    if (!username || !name || !password || !type || !['creator', 'coach'].includes(type)) {
       return res.status(400).json({ 
-        error: 'Name and valid type (creator/coach) are required' 
+        error: 'Username, name, password, and valid type (creator/coach) are required' 
       });
     }
 
-    // Check if user already exists
-    let user = await database.getUserByNameAndType(name, type);
-    
-    // If user doesn't exist, create new user
-    if (!user) {
-      user = await database.createUser(name, type);
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        error: 'Password must be at least 6 characters long' 
+      });
     }
 
-    res.json({ user });
+    // Check if username already exists
+    const existingUser = await database.getUserByUsername(username);
+    if (existingUser) {
+      return res.status(409).json({ 
+        error: 'Username already exists' 
+      });
+    }
+
+    const user = await database.createUser(username, name, password, type);
+    
+    // Don't return password in response
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Login user
+export const loginUser: RequestHandler = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ 
+        error: 'Username and password are required' 
+      });
+    }
+
+    // Get user by username
+    const user = await database.getUserByUsername(username);
+    if (!user) {
+      return res.status(401).json({ 
+        error: 'Invalid username or password' 
+      });
+    }
+
+    // Verify password
+    const isValidPassword = await database.verifyPassword(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ 
+        error: 'Invalid username or password' 
+      });
+    }
+
+    // Don't return password in response
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -42,7 +88,9 @@ export const getUserById: RequestHandler = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user });
+    // Don't return password in response
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Internal server error' });
