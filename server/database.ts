@@ -4,8 +4,6 @@ import bcrypt from "bcrypt";
 // Enable verbose mode for development
 const sqlite = sqlite3.verbose();
 
-// test
-
 // Database connection - use /tmp directory for serverless environments like Netlify
 const dbPath =
   process.env.NODE_ENV === "production"
