@@ -23,7 +23,10 @@ export const createReel: RequestHandler = async (req, res) => {
     res.json({ reel });
   } catch (error) {
     console.error('Create reel error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
 
