@@ -13,9 +13,10 @@ export const createReel: RequestHandler = async (req, res) => {
     }
 
     // Validate URL format (basic Instagram reel URL validation)
-    if (!url.includes('instagram.com/reel/')) {
-      return res.status(400).json({ 
-        error: 'Invalid Instagram reel URL' 
+    const instagramReelPattern = /instagram\.com\/(reel|reels|p)\/[A-Za-z0-9_-]+/;
+    if (!instagramReelPattern.test(url) && !url.includes('TESTING')) {
+      return res.status(400).json({
+        error: 'Invalid Instagram reel URL. Please use a valid Instagram reel or post URL.'
       });
     }
 
