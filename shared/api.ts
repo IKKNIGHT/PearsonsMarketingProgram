@@ -28,6 +28,17 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface UpdateProfileRequest {
+  username?: string;
+  name?: string;
+  password?: string;
+  currentPassword?: string;
+}
+
+export interface UpdateProfileResponse {
+  user: User;
+}
+
 // Reel types
 export interface Reel {
   id: string;
