@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Instagram, Clock, CheckCircle, LogOut, ExternalLink, MessageSquare } from 'lucide-react';
+import { Plus, Instagram, Clock, CheckCircle, LogOut, ExternalLink, MessageSquare, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function CreatorDashboard() {
@@ -99,6 +99,12 @@ export default function CreatorDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">Welcome, {user.name}</span>
+              <Link to="/profile">
+                <Button variant="outline" className="border-gray-200">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Profile
+                </Button>
+              </Link>
               <Button variant="outline" onClick={handleLogout} className="border-gray-200">
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
