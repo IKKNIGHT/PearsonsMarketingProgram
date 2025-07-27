@@ -70,8 +70,6 @@ function dbAll(sql: string, params: any[] = []): Promise<any[]> {
 // Initialize database tables
 export async function initializeDatabase() {
   try {
-    console.log('Initializing database at path:', dbPath);
-
     // Users table
     await dbRun(`
       CREATE TABLE IF NOT EXISTS users (
@@ -110,10 +108,9 @@ export async function initializeDatabase() {
       )
     `);
 
-    console.log("Database initialized successfully at:", dbPath);
+    console.log("Database initialized successfully");
   } catch (error) {
     console.error("Error initializing database:", error);
-    console.error("Database path was:", dbPath);
     throw error;
   }
 }
