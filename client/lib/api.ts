@@ -1,11 +1,12 @@
-import { 
-  User, 
-  LoginRequest, 
-  LoginResponse, 
-  CreateReelRequest, 
-  CreateReelResponse, 
+import {
+  User,
+  RegisterRequest,
+  LoginRequest,
+  AuthResponse,
+  CreateReelRequest,
+  CreateReelResponse,
   GetReelsResponse,
-  CreateFeedbackRequest, 
+  CreateFeedbackRequest,
   CreateFeedbackResponse,
   ReelWithFeedback,
   Reel
@@ -14,20 +15,39 @@ import {
 const API_BASE = '/api';
 
 class ApiService {
-  async login(name: string, type: 'creator' | 'coach'): Promise<User> {
+  async register(username: string, name: string, password: string, type: 'creator' | 'coach'): Promise<User> {
+    const response = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, name, password, type } as RegisterRequest),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Registration failed: ${response.statusText}`);
+    }
+
+    const data: AuthResponse = await response.json();
+    return data.user;
+  }
+
+  async login(username: string, password: string): Promise<User> {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, type } as LoginRequest),
+      body: JSON.stringify({ username, password } as LoginRequest),
     });
 
     if (!response.ok) {
-      throw new Error(`Login failed: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Login failed: ${response.statusText}`);
     }
 
-    const data: LoginResponse = await response.json();
+    const data: AuthResponse = await response.json();
     return data.user;
   }
 
