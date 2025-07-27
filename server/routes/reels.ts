@@ -71,3 +71,14 @@ export const getReelsWithFeedback: RequestHandler = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Get all reels (debug route)
+export const getAllReels: RequestHandler = async (req, res) => {
+  try {
+    const reels = await database.getAllReels();
+    res.json({ reels });
+  } catch (error) {
+    console.error("Get all reels error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

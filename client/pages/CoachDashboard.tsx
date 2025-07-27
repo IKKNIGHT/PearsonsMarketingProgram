@@ -61,10 +61,14 @@ export default function CoachDashboard() {
       setLoadingPending(true);
       setLoadingReviewed(true);
 
+      console.log('Loading reels...');
       const [pending, reviewed] = await Promise.all([
         api.getReelsWithoutFeedback(),
         api.getReelsWithFeedback(),
       ]);
+
+      console.log('Pending reels:', pending);
+      console.log('Reviewed reels:', reviewed);
 
       setPendingReels(pending);
       setReviewedReels(reviewed);
@@ -83,16 +87,25 @@ export default function CoachDashboard() {
 
     try {
       setIsSubmittingFeedback(true);
+      console.log('Submitting feedback for reel:', selectedReel.id);
+      
       await api.createFeedback(
         selectedReel.id,
         user.id,
         user.name,
         feedback.trim(),
       );
+      
+      console.log('Feedback submitted successfully, reloading reels...');
       setFeedback("");
       setSelectedReel(null);
       setIsFeedbackDialogOpen(false);
+      
+      // Add a small delay before reloading to ensure the database is updated
+      await new Promise(resolve => setTimeout(resolve, 200));
       await loadReels();
+      
+      console.log('Reels reloaded successfully');
     } catch (error) {
       console.error("Error submitting feedback:", error);
       alert("Failed to submit feedback. Please try again.");

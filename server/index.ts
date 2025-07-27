@@ -14,6 +14,7 @@ import {
   getReelsByCreator,
   getReelsWithoutFeedback,
   getReelsWithFeedback,
+  getAllReels,
 } from "./routes/reels";
 import { createFeedback, getFeedbackByReelId } from "./routes/feedback";
 
@@ -47,6 +48,7 @@ export function createServer() {
   app.get("/api/reels/creator/:creatorId", getReelsByCreator);
   app.get("/api/reels/pending", getReelsWithoutFeedback);
   app.get("/api/reels/reviewed", getReelsWithFeedback);
+  app.get("/api/reels/all", getAllReels); // Debug route
 
   // Feedback routes
   app.post("/api/feedback", createFeedback);

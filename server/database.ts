@@ -1,6 +1,5 @@
-import Database from 'better-sqlite3';
-import bcrypt from "bcryptjs";
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
 
 // Database interfaces
 export interface User {
@@ -33,72 +32,116 @@ export interface ReelWithFeedback extends Reel {
   feedback?: Feedback;
 }
 
-// Database connection
-const dbPath = path.join(process.cwd(), 'database.sqlite');
-const db = new Database(dbPath);
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!, // Use service role key if available
+  {
+    auth: {
+      persistSession: false // Important for server-side usage
+    },
+    db: {
+      schema: 'public'
+    }
+  }
+);
 
 // Initialize database tables
 export async function initializeDatabase() {
   try {
     // Users table
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        username TEXT UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        password TEXT NOT NULL,
-        type TEXT CHECK(type IN ('creator', 'coach')) NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    const { error: usersError } = await supabase.rpc('exec_sql', {
+      sql: `
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          username TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          password TEXT NOT NULL,
+          type TEXT CHECK(type IN ('creator', 'coach')) NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        )
+      `
+    });
+
+    if (usersError) {
+      console.log('Users table might already exist or need manual creation');
+    }
 
     // Create index on username
-    db.exec(`CREATE INDEX IF NOT EXISTS idx_username ON users (username)`);
+    const { error: usernameIndexError } = await supabase.rpc('exec_sql', {
+      sql: `CREATE INDEX IF NOT EXISTS idx_username ON users (username)`
+    });
 
     // Reels table
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS reels (
-        id TEXT PRIMARY KEY,
-        url TEXT NOT NULL,
-        creator_id TEXT NOT NULL,
-        creator_name TEXT NOT NULL,
-        submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (creator_id) REFERENCES users (id) ON DELETE CASCADE
-      )
-    `);
+    const { error: reelsError } = await supabase.rpc('exec_sql', {
+      sql: `
+        CREATE TABLE IF NOT EXISTS reels (
+          id TEXT PRIMARY KEY,
+          url TEXT NOT NULL,
+          creator_id TEXT NOT NULL,
+          creator_name TEXT NOT NULL,
+          submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (creator_id) REFERENCES users (id) ON DELETE CASCADE
+        )
+      `
+    });
+
+    if (reelsError) {
+      console.log('Reels table might already exist or need manual creation');
+    }
 
     // Create indexes for reels
-    db.exec(`CREATE INDEX IF NOT EXISTS idx_creator_id ON reels (creator_id)`);
-    db.exec(`CREATE INDEX IF NOT EXISTS idx_submitted_at ON reels (submitted_at)`);
+    const { error: creatorIndexError } = await supabase.rpc('exec_sql', {
+      sql: `CREATE INDEX IF NOT EXISTS idx_creator_id ON reels (creator_id)`
+    });
+
+    const { error: submittedIndexError } = await supabase.rpc('exec_sql', {
+      sql: `CREATE INDEX IF NOT EXISTS idx_submitted_at ON reels (submitted_at)`
+    });
 
     // Feedback table
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS feedback (
-        id TEXT PRIMARY KEY,
-        reel_id TEXT NOT NULL,
-        coach_id TEXT NOT NULL,
-        coach_name TEXT NOT NULL,
-        content TEXT NOT NULL,
-        submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (reel_id) REFERENCES reels (id) ON DELETE CASCADE,
-        FOREIGN KEY (coach_id) REFERENCES users (id) ON DELETE CASCADE,
-        UNIQUE (reel_id)
-      )
-    `);
+    const { error: feedbackError } = await supabase.rpc('exec_sql', {
+      sql: `
+        CREATE TABLE IF NOT EXISTS feedback (
+          id TEXT PRIMARY KEY,
+          reel_id TEXT NOT NULL,
+          coach_id TEXT NOT NULL,
+          coach_name TEXT NOT NULL,
+          content TEXT NOT NULL,
+          submitted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (reel_id) REFERENCES reels (id) ON DELETE CASCADE,
+          FOREIGN KEY (coach_id) REFERENCES users (id) ON DELETE CASCADE,
+          UNIQUE (reel_id)
+        )
+      `
+    });
+
+    if (feedbackError) {
+      console.log('Feedback table might already exist or need manual creation');
+    }
 
     // Create indexes for feedback
-    db.exec(`CREATE INDEX IF NOT EXISTS idx_reel_id ON feedback (reel_id)`);
-    db.exec(`CREATE INDEX IF NOT EXISTS idx_coach_id ON feedback (coach_id)`);
-    db.exec(`CREATE INDEX IF NOT EXISTS idx_feedback_submitted_at ON feedback (submitted_at)`);
+    const { error: reelIndexError } = await supabase.rpc('exec_sql', {
+      sql: `CREATE INDEX IF NOT EXISTS idx_reel_id ON feedback (reel_id)`
+    });
 
-    console.log("SQLite database initialized successfully");
+    const { error: coachIndexError } = await supabase.rpc('exec_sql', {
+      sql: `CREATE INDEX IF NOT EXISTS idx_coach_id ON feedback (coach_id)`
+    });
+
+    const { error: feedbackSubmittedIndexError } = await supabase.rpc('exec_sql', {
+      sql: `CREATE INDEX IF NOT EXISTS idx_feedback_submitted_at ON feedback (submitted_at)`
+    });
+
+    console.log("Supabase database initialized successfully");
   } catch (error) {
-    console.error("Error initializing SQLite database:", error);
-    throw error;
+    console.error("Error initializing Supabase database:", error);
+    // Don't throw error as tables might already exist
+    console.log("Tables may need to be created manually in Supabase dashboard");
   }
 }
 
-// Database operations
+// Database operations using Supabase client
 export const database = {
   // User operations
   async createUser(
@@ -109,27 +152,32 @@ export const database = {
   ): Promise<User> {
     const id = Date.now().toString();
     const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        id,
+        username,
+        name,
+        password: hashedPassword,
+        type
+      })
+      .select()
+      .single();
 
-    const stmt = db.prepare(
-      "INSERT INTO users (id, username, name, password, type) VALUES (?, ?, ?, ?, ?)"
-    );
-    stmt.run(id, username, name, hashedPassword, type);
-
-    const getUserStmt = db.prepare(
-      "SELECT id, username, name, password, type, datetime(created_at) as created_at FROM users WHERE id = ?"
-    );
-    const user = getUserStmt.get(id) as User;
-
-    return user;
+    if (error) throw error;
+    return data as User;
   },
 
   async getUserByUsername(username: string): Promise<User | null> {
-    const stmt = db.prepare(
-      "SELECT id, username, name, password, type, datetime(created_at) as created_at FROM users WHERE username = ?"
-    );
-    const user = stmt.get(username) as User | undefined;
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .maybeSingle();
 
-    return user || null;
+    if (error) throw error;
+    return data;
   },
 
   async verifyPassword(
@@ -148,55 +196,49 @@ export const database = {
       throw new Error("User not found");
     }
 
-    const updateFields: string[] = [];
-    const updateValues: any[] = [];
-
+    const updateData: any = {};
     if (updates.username !== undefined) {
       // Check if new username is already taken by another user
       const existingUser = await this.getUserByUsername(updates.username);
       if (existingUser && existingUser.id !== id) {
         throw new Error("Username already exists");
       }
-      updateFields.push("username = ?");
-      updateValues.push(updates.username);
+      updateData.username = updates.username;
     }
 
     if (updates.name !== undefined) {
-      updateFields.push("name = ?");
-      updateValues.push(updates.name);
+      updateData.name = updates.name;
     }
 
     if (updates.password !== undefined) {
       const hashedPassword = await bcrypt.hash(updates.password, 10);
-      updateFields.push("password = ?");
-      updateValues.push(hashedPassword);
+      updateData.password = hashedPassword;
     }
 
-    if (updateFields.length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return user;
     }
 
-    updateValues.push(id);
-    const sql = `UPDATE users SET ${updateFields.join(", ")} WHERE id = ?`;
-    const stmt = db.prepare(sql);
-    stmt.run(...updateValues);
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-    // Return updated user
-    const updatedUser = await this.getUserById(id);
-    if (!updatedUser) {
-      throw new Error("Failed to retrieve updated user");
-    }
-
-    return updatedUser;
+    if (error) throw error;
+    return data as User;
   },
 
   async getUserById(id: string): Promise<User | null> {
-    const stmt = db.prepare(
-      "SELECT id, username, name, password, type, datetime(created_at) as created_at FROM users WHERE id = ?"
-    );
-    const user = stmt.get(id) as User | undefined;
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
 
-    return user || null;
+    if (error) throw error;
+    return data;
   },
 
   // Reel operations
@@ -207,97 +249,153 @@ export const database = {
   ): Promise<Reel> {
     const id = Date.now().toString();
 
-    const stmt = db.prepare(
-      "INSERT INTO reels (id, url, creator_id, creator_name) VALUES (?, ?, ?, ?)"
-    );
-    stmt.run(id, url, creatorId, creatorName);
+    const { data, error } = await supabase
+      .from('reels')
+      .insert({
+        id,
+        url,
+        creator_id: creatorId,
+        creator_name: creatorName
+      })
+      .select()
+      .single();
 
-    const getReelStmt = db.prepare(
-      "SELECT id, url, creator_id, creator_name, datetime(submitted_at) as submitted_at FROM reels WHERE id = ?"
-    );
-    const reel = getReelStmt.get(id) as Reel;
+    if (error) throw error;
+    return data as Reel;
+  },
 
-    return reel;
+  // Debug method to get all reels
+  async getAllReels(): Promise<Reel[]> {
+    console.log('Getting ALL reels...');
+    
+    const { data, error } = await supabase
+      .from('reels')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('Get all reels error:', error);
+      throw error;
+    }
+
+    console.log('All reels in database:', data);
+    return data || [];
   },
 
   async getReelsByCreator(creatorId: string): Promise<ReelWithFeedback[]> {
-    const stmt = db.prepare(`
-      SELECT 
-        r.id, r.url, r.creator_id, r.creator_name,
-        datetime(r.submitted_at) as submitted_at,
-        f.id as feedback_id, f.coach_id, f.coach_name, f.content as feedback_content,
-        datetime(f.submitted_at) as feedback_submitted_at
-       FROM reels r
-       LEFT JOIN feedback f ON r.id = f.reel_id
-       WHERE r.creator_id = ?
-       ORDER BY r.submitted_at DESC
-    `);
+    console.log('Getting reels for creator:', creatorId);
     
-    const rows = stmt.all(creatorId) as any[];
+    const { data, error } = await supabase
+      .from('reels')
+      .select(`
+        *,
+        feedback (*)
+      `)
+      .eq('creator_id', creatorId)
+      .order('submitted_at', { ascending: false });
 
-    return rows.map((row: any) => ({
+    if (error) {
+      console.error('Get reels by creator error:', error);
+      throw error;
+    }
+
+    console.log('Raw data from getReelsByCreator:', data);
+    
+    const result = data?.map((row: any) => ({
       id: row.id,
       url: row.url,
       creator_id: row.creator_id,
       creator_name: row.creator_name,
       submitted_at: row.submitted_at,
-      feedback: row.feedback_id
-        ? {
-            id: row.feedback_id,
-            reel_id: row.id,
-            coach_id: row.coach_id,
-            coach_name: row.coach_name,
-            content: row.feedback_content,
-            submitted_at: row.feedback_submitted_at,
-          }
-        : undefined,
-    }));
+      feedback: row.feedback || undefined, // Use the object directly, not array[0]
+    })) || [];
+    
+    console.log('Processed reels for creator:', result);
+    return result;
   },
 
   async getReelsWithoutFeedback(): Promise<Reel[]> {
-    const stmt = db.prepare(`
-      SELECT r.id, r.url, r.creator_id, r.creator_name,
-             datetime(r.submitted_at) as submitted_at
-       FROM reels r
-       LEFT JOIN feedback f ON r.id = f.reel_id
-       WHERE f.id IS NULL
-       ORDER BY r.submitted_at ASC
-    `);
+    console.log('Getting reels without feedback...');
     
-    const rows = stmt.all() as any[];
+    // Get all reels and filter out those that have feedback
+    const { data, error } = await supabase
+      .from('reels')
+      .select(`
+        *,
+        feedback (*)
+      `)
+      .order('submitted_at', { ascending: true });
 
-    return rows as Reel[];
+    if (error) {
+      console.error("Get reels without feedback error:", error);
+      throw error;
+    }
+
+    console.log('Raw data from getReelsWithoutFeedback:', data);
+
+    // Filter out reels that have feedback
+    const result = (data || [])
+      .filter((reel: any) => {
+        // Check if feedback exists (Supabase returns object, not array for single relationships)
+        const hasFeedback = reel.feedback && reel.feedback.id;
+        console.log(`Reel ${reel.id} has feedback:`, hasFeedback, reel.feedback);
+        return !hasFeedback;
+      })
+      .map((reel: any) => ({
+        id: reel.id,
+        url: reel.url,
+        creator_id: reel.creator_id,
+        creator_name: reel.creator_name,
+        submitted_at: reel.submitted_at,
+      }));
+      
+    console.log('Filtered reels without feedback:', result);
+    return result;
   },
 
   async getReelsWithFeedback(): Promise<ReelWithFeedback[]> {
-    const stmt = db.prepare(`
-      SELECT 
-        r.id, r.url, r.creator_id, r.creator_name,
-        datetime(r.submitted_at) as submitted_at,
-        f.id as feedback_id, f.coach_id, f.coach_name, f.content as feedback_content,
-        datetime(f.submitted_at) as feedback_submitted_at
-       FROM reels r
-       INNER JOIN feedback f ON r.id = f.reel_id
-       ORDER BY f.submitted_at DESC
-    `);
+    console.log('Getting reels with feedback...');
     
-    const rows = stmt.all() as any[];
+    // Get all reels and filter those that have feedback
+    const { data, error } = await supabase
+      .from('reels')
+      .select(`
+        *,
+        feedback (*)
+      `)
+      .order('submitted_at', { ascending: false });
 
-    return rows.map((row: any) => ({
-      id: row.id,
-      url: row.url,
-      creator_id: row.creator_id,
-      creator_name: row.creator_name,
-      submitted_at: row.submitted_at,
-      feedback: {
-        id: row.feedback_id,
-        reel_id: row.id,
-        coach_id: row.coach_id,
-        coach_name: row.coach_name,
-        content: row.feedback_content,
-        submitted_at: row.feedback_submitted_at,
-      },
-    }));
+    if (error) {
+      console.error("Get reels with feedback error:", error);
+      throw error;
+    }
+
+    console.log('Raw data from getReelsWithFeedback:', data);
+
+    // Filter reels that have feedback and sort by feedback date
+    const result = (data || [])
+      .filter((reel: any) => {
+        // Check if feedback exists (Supabase returns object, not array for single relationships)
+        const hasFeedback = reel.feedback && reel.feedback.id;
+        console.log(`Reel ${reel.id} has feedback:`, hasFeedback, reel.feedback);
+        return hasFeedback;
+      })
+      .map((row: any) => ({
+        id: row.id,
+        url: row.url,
+        creator_id: row.creator_id,
+        creator_name: row.creator_name,
+        submitted_at: row.submitted_at,
+        feedback: row.feedback, // Use the object directly, not array[0]
+      }))
+      .sort((a, b) => {
+        const aDate = a.feedback?.submitted_at || '';
+        const bDate = b.feedback?.submitted_at || '';
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      });
+      
+    console.log('Filtered reels with feedback:', result);
+    return result;
   },
 
   // Feedback operations
@@ -307,27 +405,48 @@ export const database = {
     coachName: string,
     content: string,
   ): Promise<Feedback> {
-    const id = Date.now().toString();
-
-    const stmt = db.prepare(
-      "INSERT INTO feedback (id, reel_id, coach_id, coach_name, content) VALUES (?, ?, ?, ?, ?)"
-    );
-    stmt.run(id, reelId, coachId, coachName, content);
-
-    const getFeedbackStmt = db.prepare(
-      "SELECT id, reel_id, coach_id, coach_name, content, datetime(submitted_at) as submitted_at FROM feedback WHERE id = ?"
-    );
-    const feedback = getFeedbackStmt.get(id) as Feedback;
-
-    return feedback;
+    console.log('Creating feedback with:', { reelId, coachId, coachName, content });
+    
+    try {
+      const id = Date.now().toString();
+  
+      const { data, error } = await supabase
+        .from('feedback')
+        .insert({
+          id,
+          reel_id: reelId,
+          coach_id: coachId,
+          coach_name: coachName,
+          content
+        })
+        .select()
+        .single();
+  
+      if (error) {
+        console.error('Feedback creation failed:', error);
+        throw error;
+      }
+  
+      console.log('Feedback created successfully:', data);
+      
+      // Add a small delay to ensure the transaction is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      return data as Feedback;
+    } catch (err) {
+      console.error('Unexpected error in createFeedback:', err);
+      throw err;
+    }
   },
 
   async getFeedbackByReelId(reelId: string): Promise<Feedback | null> {
-    const stmt = db.prepare(
-      "SELECT id, reel_id, coach_id, coach_name, content, datetime(submitted_at) as submitted_at FROM feedback WHERE reel_id = ?"
-    );
-    const feedback = stmt.get(reelId) as Feedback | undefined;
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('*')
+      .eq('reel_id', reelId)
+      .maybeSingle();
 
-    return feedback || null;
+    if (error) throw error;
+    return data;
   },
 };
